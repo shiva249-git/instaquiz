@@ -5,14 +5,13 @@ from openai import OpenAI
 from flask_cors import CORS
 
 app = Flask(__name__)
-
-# ✅ Allow your frontend domain for CORS:
 CORS(app, resources={r"/*": {"origins": "https://instaquiz-xngy.onrender.com"}})
 
 @app.route("/", methods=["GET"])
 def home():
     return render_template("index.html")
 
+# Load your API key from the environment
 api_key = os.environ.get("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
@@ -20,8 +19,11 @@ client = OpenAI(api_key=api_key)
 sessions = {}
 
 def generate_ssc_question(topic):
+    """
+    Ask GPT-4 to generate an SSC CGL MCQ.
+    """
     prompt = f"""
-Generate one SSC CGL multiple choice question on the topic \"{topic}\".
+Generate one SSC CGL multiple choice question on the topic "{topic}".
 Provide:
 - The question
 - Four options (A, B, C, D)
@@ -37,6 +39,7 @@ D) <option D>
 Answer: <correct option letter>
 Explanation: <short explanation>
 """
+
     completion = client.chat.completions.create(
         model="gpt-4",
         messages=[
@@ -53,8 +56,10 @@ def start_quiz():
     data = request.get_json()
     topic = data.get("topic", "General Knowledge")
 
+    # Get AI-generated question
     question_text = generate_ssc_question(topic)
 
+    # Parse AI response
     lines = question_text.strip().split("\n")
     question_line = lines[0]
     options_lines = lines[1:5]
@@ -71,7 +76,10 @@ def start_quiz():
     answer_letter = answer_line.replace("Answer: ", "").strip()
     explanation = explanation_line.replace("Explanation: ", "").strip()
 
+    # Generate session id
     session_id = str(uuid.uuid4())
+
+    # Save the session
     sessions[session_id] = {
         "answer": answer_letter,
         "explanation": explanation
@@ -85,9 +93,33 @@ def start_quiz():
     }
     return jsonify(response)
 
+@app.route("/answer", methods=["POST"])
+def check_answer():
+    data = request.get_json()
+    session_id = data.get("session_id")
+    user_answer = data.get("answer", "").strip().upper()
+
+    if session_id not in sessions:
+        return jsonify({"error": "Invalid or expired session_id."}), 400
+
+    if user_answer == correct_answer:
+        return jsonify({
+            "result": "correct",
+
             "explanation": explanation
         })
+    else:
+
+        return jsonify({
+            "result": "incorrect",
+
+            "correct_answer": correct_answer,
+            "explanation": explanation
+
+        })
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=port)
     port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
