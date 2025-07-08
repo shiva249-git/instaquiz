@@ -107,6 +107,7 @@ def start_quiz():
     }
     return jsonify(response)
 
+
 @app.route("/answer", methods=["POST"])
 def check_answer():
     data = request.get_json()
@@ -126,13 +127,11 @@ def check_answer():
         return jsonify({
             "result": "correct",
             "explanation": explanation
-    })
-else:
+        })
+    else:
         return jsonify({
-
             "result": "incorrect",
             "correct_answer": correct_answer,
-
             "explanation": explanation
         })
 
@@ -140,4 +139,3 @@ else:
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
