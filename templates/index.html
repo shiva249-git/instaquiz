@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SSC CGL Quiz Bot</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 16px;
+    }
+    .question {
+      margin-top: 20px;
+    }
+    .result {
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    input[type="text"] {
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+  </style>
+
+</head>
+
+<body>
+  <h2>SSC CGL Practice Quiz</h2>
+
+
+  <label>Enter Topic:</label><br />
+
+  <input type="text" id="topic" placeholder="e.g. Geometry" />
+
+  <button onclick="getQuiz()">Get Question</button>
+
+  <div class="question" id="questionArea" style="display: none;">
+    <h3 id="questionText"></h3>
+    <div id="options"></div>
+
+    <button onclick="submitAnswer()">Submit Answer</button>
+  </div>
+
+
+  <div class="result" id="result"></div>
+
+
+  <script>
+    let sessionId = null;
+
+    let selectedAnswer = null;
+
+
+    function getQuiz() {
+      const topic = document.getElementById('topic').value.trim();
+      if (!topic) {
+
+        alert("Please enter a topic.");
+
+        return;
+      }
+
+
+      fetch('https://instaquiz-xngy.onrender.com/quiz', {
+      
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: topic })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Server error");
+        return res.json();
+      })
+      .then(data => {
+        sessionId = data.session_id;
+        selectedAnswer = null;
+
+        document.getElementById('questionText').innerText = data.question;
+
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+
+        for (const [key, value] of Object.entries(data.options)) {
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'answer';
+
+          radio.value = key;
+
+          radio.onclick = () => selectedAnswer = key;
+
+
+          const label = document.createElement('label');
+
+          label.innerText = ` ${key}) ${value}`;
+
+
+
+          optionsDiv.appendChild(line);
+        }
+
+        document.getElementById('questionArea').style.display = 'block';
+          const line = document.createElement('div');
+          line.appendChild(radio);
+
+          line.appendChild(label);
+
+        document.getElementById('result').innerText = '';
+      })
+      .catch(err => {
+
+        console.error(err);
+        alert("Could not load quiz question.");
+
+      });
+    }
+
+
+    function submitAnswer() {
+      if (!selectedAnswer) {
+
+        alert("Please select an answer.");
+        return;
+      }
+
+
+      fetch('https://instaquiz-xngy.onrender.com/answer', {
+
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+
+        body: JSON.stringify({
+          session_id: sessionId,
+          answer: selectedAnswer
+
+        })
+
+      })
+      .then(res => {
+
+        if (!res.ok) throw new Error("Server error");
+        return res.json();
+
+      })
+      .then(data => {
+        if (data.result === 'correct') {
+
+          document.getElementById('result').innerText =
+            `✅ Correct! ${data.explanation}`;
+        } else {
+
+          document.getElementById('result').innerText =
+            `❌ Wrong. Correct answer is ${data.correct_answer}. ${data.explanation}`;
+        }
+      })
+
+      .catch(err => {
+        console.error(err);
+        alert("Could not submit your answer.");
+      });
+    }
+  </script>
+
+</body>
+</html>
+
