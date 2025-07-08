@@ -7,6 +7,10 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+@app.route("/", methods=["GET"])
+def home():
+    return "✅ SSC CGL Quiz API is running!"
+
 OPENAI_API_KEY = "sk-xxxxx"  # replace with your OpenAI API key
 client = OpenAI(api_key=OPENAI_API_KEY)
 
