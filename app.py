@@ -5,13 +5,29 @@ from openai import OpenAI
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://instaquiz-xngy.onrender.com"}})
+
+# Enable CORS for your frontend origin
+CORS(app, resources={
+    r"/*": {
+        "origins": "https://instaquiz-xngy.onrender.com",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
+
+# Optional - handle OPTIONS explicitly
+@app.route("/quiz", methods=["OPTIONS"])
+def quiz_options():
+    return '', 204
+
+@app.route("/answer", methods=["OPTIONS"])
+def answer_options():
+    return '', 204
 
 @app.route("/", methods=["GET"])
 def home():
     return render_template("index.html")
 
-# Load your API key from the environment
 api_key = os.environ.get("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
@@ -19,11 +35,9 @@ client = OpenAI(api_key=api_key)
 sessions = {}
 
 def generate_ssc_question(topic):
-    """
-    Ask GPT-4 to generate an SSC CGL MCQ.
-    """
+    """Ask GPT-4 to generate an SSC CGL MCQ."""
     prompt = f"""
-Generate one SSC CGL multiple choice question on the topic "{topic}".
+Generate one SSC CGL multiple choice question on the topic \"{topic}\".
 Provide:
 - The question
 - Four options (A, B, C, D)
@@ -102,20 +116,23 @@ def check_answer():
     if session_id not in sessions:
         return jsonify({"error": "Invalid or expired session_id."}), 400
 
+    correct_answer = sessions[session_id]["answer"]
+    explanation = sessions[session_id]["explanation"]
+
+    # Clean up session after answer
+    sessions.pop(session_id)
+
     if user_answer == correct_answer:
         return jsonify({
             "result": "correct",
-
             "explanation": explanation
-        })
     else:
-
         return jsonify({
+
             "result": "incorrect",
-
             "correct_answer": correct_answer,
-            "explanation": explanation
 
+            "explanation": explanation
         })
 
 
