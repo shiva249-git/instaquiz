@@ -1,8 +1,9 @@
-import os 
+import os
 import uuid
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from openai import OpenAI
 from flask_cors import CORS
+
 
 app = Flask(__name__)
 CORS(app)
