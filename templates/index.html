@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSC CGL Quiz Bot</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: auto; }
+    button { margin-top: 10px; }
+    .question { margin-top: 20px; }
+    .result { margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>SSC CGL Practice Quiz</h2>
+
+  <label>Enter Topic:</label><br>
+  <input type="text" id="topic" placeholder="e.g. Geometry" />
+  <button onclick="getQuiz()">Get Question</button>
+
+  <div class="question" id="questionArea" style="display: none;">
+    <h3 id="questionText"></h3>
+    <div id="options"></div>
+    <button onclick="submitAnswer()">Submit Answer</button>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <script>
+    let sessionId = null;
+    let selectedAnswer = null;
+
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: topic })
+
+      })
+      .then(res => res.json())
+
+      .then(data => {
+
+        sessionId = data.session_id;
+
+        document.getElementById('questionText').innerText = data.question;
+
+        const optionsDiv = document.getElementById('options');
+
+        optionsDiv.innerHTML = '';
+
+        for (const [key, value] of Object.entries(data.options)) {
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'answer';
+
+          radio.value = key;
+          radio.onclick = () => selectedAnswer = key;
+
+          optionsDiv.appendChild(radio);
+
+          const label = document.createElement('label');
+
+          label.innerText = ` ${key}) ${value}`;
+          optionsDiv.appendChild(label);
+
+
+          optionsDiv.appendChild(document.createElement('br'));
+        }
+
+
+        document.getElementById('questionArea').style.display = 'block';
+
+        document.getElementById('result').innerText = '';
+      });
+
+    }
+
+
+    function submitAnswer() {
+      if (!selectedAnswer) {
+
+        alert('Please select an answer.');
+        return;
+      }
+
+
+      fetch('https://ssc-cgl-quiz.onrender.com/answer', {
+
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          answer: selectedAnswer
+
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.result === 'correct') {
+          document.getElementById('result').innerText = `✅ Correct! ${data.explanation}`;
+        } else {
+          document.getElementById('result').innerText = `❌ Wrong. Correct answer is ${data.correct_answer}. ${data.explanation}`;
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+
