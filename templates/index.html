@@ -53,121 +53,95 @@
   <div class="result" id="result"></div>
 
 
-  <script>
-    let sessionId = null;
+<script>
+  let sessionId = null;
+  let selectedAnswer = null;
 
-    let selectedAnswer = null;
+  // ⭐️ CHANGE THIS to your deployed URL
+  const API_BASE = "https://instaquiz-xngy.onrender.com";
 
+  function getQuiz() {
+    const topic = document.getElementById('topic').value.trim();
 
-    function getQuiz() {
-      const topic = document.getElementById('topic').value.trim();
-      if (!topic) {
-
-        alert("Please enter a topic.");
-
-        return;
-      }
-
-
-      fetch('https://instaquiz-xngy.onrender.com/quiz', {
-      
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: topic })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Server error");
-        return res.json();
-      })
-      .then(data => {
-        sessionId = data.session_id;
-        selectedAnswer = null;
-
-        document.getElementById('questionText').innerText = data.question;
-
-        const optionsDiv = document.getElementById('options');
-        optionsDiv.innerHTML = '';
-
-        for (const [key, value] of Object.entries(data.options)) {
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'answer';
-
-          radio.value = key;
-
-          radio.onclick = () => selectedAnswer = key;
-
-
-          const label = document.createElement('label');
-
-          label.innerText = ` ${key}) ${value}`;
-
-
-
-          optionsDiv.appendChild(line);
-        }
-
-        document.getElementById('questionArea').style.display = 'block';
-          const line = document.createElement('div');
-          line.appendChild(radio);
-
-          line.appendChild(label);
-
-        document.getElementById('result').innerText = '';
-      })
-      .catch(err => {
-
-        console.error(err);
-        alert("Could not load quiz question.");
-
-      });
+    if (!topic) {
+      alert("Please enter a topic.");
+      return;
     }
 
+    fetch(`${API_BASE}/quiz`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: topic })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Server error");
+      return res.json();
+    })
+    .then(data => {
+      sessionId = data.session_id;
 
-    function submitAnswer() {
-      if (!selectedAnswer) {
+      document.getElementById('questionText').innerText = data.question;
 
-        alert("Please select an answer.");
-        return;
+      const optionsDiv = document.getElementById('options');
+      optionsDiv.innerHTML = '';
+
+      for (const [key, value] of Object.entries(data.options)) {
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'answer';
+        radio.value = key;
+        radio.onclick = () => selectedAnswer = key;
+
+        const label = document.createElement('label');
+        label.innerText = ` ${key}) ${value}`;
+
+        optionsDiv.appendChild(radio);
+        optionsDiv.appendChild(label);
+        optionsDiv.appendChild(document.createElement('br'));
       }
 
+      document.getElementById('questionArea').style.display = 'block';
+      document.getElementById('result').innerText = '';
+    })
+    .catch(err => {
+      console.error("Fetch failed:", err);
+      alert("Could not load quiz question. Check console for details.");
+    });
+  }
 
-      fetch('https://instaquiz-xngy.onrender.com/answer', {
-
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-
-        body: JSON.stringify({
-          session_id: sessionId,
-          answer: selectedAnswer
-
-        })
-
-      })
-      .then(res => {
-
-        if (!res.ok) throw new Error("Server error");
-        return res.json();
-
-      })
-      .then(data => {
-        if (data.result === 'correct') {
-
-          document.getElementById('result').innerText =
-            `✅ Correct! ${data.explanation}`;
-        } else {
-
-          document.getElementById('result').innerText =
-            `❌ Wrong. Correct answer is ${data.correct_answer}. ${data.explanation}`;
-        }
-      })
-
-      .catch(err => {
-        console.error(err);
-        alert("Could not submit your answer.");
-      });
+  function submitAnswer() {
+    if (!selectedAnswer) {
+      alert("Please select an answer.");
+      return;
     }
-  </script>
+
+    fetch(`${API_BASE}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        answer: selectedAnswer
+      })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Server error");
+      return res.json();
+    })
+    .then(data => {
+      if (data.result === 'correct') {
+        document.getElementById('result').innerText =
+          `✅ Correct! ${data.explanation}`;
+      } else {
+        document.getElementById('result').innerText =
+          `❌ Wrong. Correct answer is ${data.correct_answer}. ${data.explanation}`;
+      }
+    })
+    .catch(err => {
+      console.error("Fetch failed:", err);
+      alert("Could not submit your answer. Check console for details.");
+    });
+  }
+</script>
 
 </body>
 </html>
