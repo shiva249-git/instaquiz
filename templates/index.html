@@ -45,7 +45,7 @@
 </head>
 <body>
   <div class="quiz-container">
-    <h2 class="text-center mb-4">🎯 SSC CGL Practice Quiz</h2>
+    <h2 class="text-center mb-4"> M-/ SSC CGL Practice Q</h2>h2>
 
     <div class="mb-3">
       <label for="topic" class="form-label">Enter Topic:</label>
@@ -128,57 +128,84 @@
       });
     }
 
-    function submitAnswer() {
-      if (!selectedAnswer) {
-        alert("Please select an answer!");
-        return;
-      }
+function submitAnswer() {
+  if (!selectedAnswer) {
+    alert("Please select an answer!");
+    return;
+  }
 
-      document.getElementById("loading").style.display = "block";
-      document.getElementById("result").innerText = "";
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("result").innerText = "";
 
-      fetch("https://ssc-cgl-quiz.onrender.com/answer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sessionId,
-        })
-      })
+  fetch("https://ssc-cgl-quiz.onrender.com/answer", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      answer: selectedAnswer
+    })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Server error");
+    return res.json();
+  })
+  .then(data => {
+    let resultHtml;
 
-      .then(res => {
-        if (!res.ok) throw new Error("Server error");
-        return res.json();
-      })
-
-      .then(data => {
-        let resultHtml;
-
-        if (data.result === "correct") {
-
-          resultHtml = `<span class="text-success">✅ Correct! ${data.explanation}</span>`;
-
-        } else {
-          resultHtml = `<span class="text-danger">❌ Wrong. Correct answer is ${data.correct_answer}. ${data.explanation}</span>`;
-
-        }
-        document.getElementById("result").innerHTML = resultHtml;
-
-
-        // Reset selection
-        document.querySelectorAll('input[name="answer"]').forEach(r => r.checked = false);
-        selectedAnswer = null;
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Could not submit your answer.");
-      })
-      .finally(() => {
-        document.getElementById("loading").style.display = "none";
-      });
-
+    if (data.result === "correct") {
+      resultHtml = `<span class="text-success">✅ Correct! ${data.explanation}</span>`;
+    } else {
+      resultHtml = `<span class="text-danger">❌ Wrong. Correct answer is ${data.correct_answer}. ${data.explanation}</span>`;
     }
+    document.getElementById("result").innerHTML = resultHtml;
+
+    // Reset selection
+    document.querySelectorAll('input[name="answer"]').forEach(r => r.checked = false);
+    selectedAnswer = null;
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Could not submit your answer.");
+  })
+  .finally(() => {
+    document.getElementById("loading").style.display = "none";
+  });
+}
 
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
