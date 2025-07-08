@@ -126,7 +126,8 @@ def check_answer():
         return jsonify({
             "result": "correct",
             "explanation": explanation
-    else:
+    })
+else:
         return jsonify({
 
             "result": "incorrect",
