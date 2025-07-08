@@ -4,18 +4,26 @@ from flask import Flask, request, jsonify, render_template
 from openai import OpenAI
 from flask_cors import CORS
 
-
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://instaquiz-xngy.onrender.com"}})
+
+# ✅ CORS configuration
+CORS(
+    app,
+    origins=["https://instaquiz-xngy.onrender.com"],
+    supports_credentials=True,
+    allow_headers="*",
+    methods=["GET", "POST", "OPTIONS"]
+)
 
 @app.route("/", methods=["GET"])
 def home():
     return render_template("index.html")
 
+# Load OpenAI API key from environment
 api_key = os.environ.get("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
-# Store active quiz sessions in-memory
+# Store active quiz sessions in memory
 sessions = {}
 
 def generate_ssc_question(topic):
@@ -41,20 +49,28 @@ Explanation: <short explanation>
     completion = client.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": "You are an SSC CGL exam question generator."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are an SSC CGL exam question generator."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
         ],
         temperature=0.5
     )
 
     return completion.choices[0].message.content
 
-@app.route("/quiz", methods=["POST"])
+@app.route("/quiz", methods=["POST", "OPTIONS"])
 def start_quiz():
+    if request.method == "OPTIONS":
+        return '', 200
+
     data = request.get_json()
     topic = data.get("topic", "General Knowledge")
 
-    # Get AI-generated question
     question_text = generate_ssc_question(topic)
 
     # Parse AI response
@@ -74,10 +90,8 @@ def start_quiz():
     answer_letter = answer_line.replace("Answer: ", "").strip()
     explanation = explanation_line.replace("Explanation: ", "").strip()
 
-    # Generate session id
     session_id = str(uuid.uuid4())
 
-    # Save the session
     sessions[session_id] = {
         "answer": answer_letter,
         "explanation": explanation
@@ -89,26 +103,32 @@ def start_quiz():
         "message": "Reply with A, B, C or D.",
         "session_id": session_id
     }
+
     return jsonify(response)
 
-@app.route("/answer", methods=["POST"])
+@app.route("/answer", methods=["POST", "OPTIONS"])
 def check_answer():
+    if request.method == "OPTIONS":
+        return '', 200
+
     data = request.get_json()
     session_id = data.get("session_id")
     user_answer = data.get("answer", "").strip().upper()
 
     if session_id not in sessions:
         return jsonify({"error": "Invalid or expired session_id."}), 400
-
-    correct_answer = sessions[session_id]["answer"]
     explanation = sessions[session_id]["explanation"]
 
-    # Clean up session after answer
+
     sessions.pop(session_id)
 
+
     if user_answer == correct_answer:
+
         return jsonify({
+
             "result": "correct",
+
             "explanation": explanation
         })
     else:
@@ -121,4 +141,6 @@ def check_answer():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+
     app.run(host="0.0.0.0", port=port)
+
